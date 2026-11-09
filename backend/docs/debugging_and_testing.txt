@@ -1,0 +1,2 @@
+Debugging and Testing
+No program works perfectly the first time, so debugging is a central part of coding. Reading error messages carefully is the first step, since they usually point to the line and type of problem. Printing values or using a debugger helps reveal what the program is actually doing. Automated tests take this further by checking that code behaves correctly every time it changes. In Python, the pytest library makes writing tests simple, and FastAPI provides a TestClient for sending fake requests to an API. Well-tested code is easier to change with confidence.

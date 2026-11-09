@@ -1,0 +1,46 @@
+# Complete RAG stack: Streamlit frontend -> FastAPI backend -> Ollama LLM
+# Compose puts all services on one private network, where each service
+# name (backend, frontend, ollama) works as a hostname
+
+services:
+  # FastAPI RAG API (retrieval with ChromaDB, generation with Ollama)
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      - ollama
+    volumes:
+      - chroma_data:/app/chroma_data  # keeps ChromaDB data after restarts
+      - ./backend/docs:/app/docs:ro   # new files can be ingested without a rebuild
+    # Uses Python because the slim image does not include curl
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Streamlit chat interface
+  frontend:
+    build: ./frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=${API_URL} # set in .env
+    depends_on:
+      backend:
+        condition: service_healthy    # wait until the backend passes its healthcheck
+
+  # Ollama LLM server (prebuilt image, no Dockerfile needed)
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama     # keeps downloaded models
+
+volumes:
+  chroma_data:
+  ollama_data:
